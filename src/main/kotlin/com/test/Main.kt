@@ -1,6 +1,6 @@
 package com.test
 
-import com.wrapper.spotify.SpotifyApi
+import com.test.SpotifyApiWrapper.Companion.api
 import java.io.File
 import java.io.FileInputStream
 import java.util.*
@@ -18,29 +18,15 @@ fun main(args: Array<String>) {
     val properties = Properties()
     properties.load(FileInputStream("application.properties"))
 
-    val api: SpotifyApi = SpotifyApi.Builder()
-        .setClientId("deecbb22fbb641fb853c69721338e3a2")
-        .setClientSecret("09b0d29264be4ba6905b3edec3d3615a")
-        .build()
-
-    val clientCredentials = api.clientCredentials().build().execute()
-    println(clientCredentials.expiresIn)
-    api.accessToken = clientCredentials.accessToken
-
     val playlistId: String = properties["spotify_playlist"] as String
     print(playlistId)
 
-    val playlist = api.getPlaylist(playlistId).build()
-        .execute()
-    //val tracks = playlist.tracks.items
-    //val trackNames = tracks.map { it.track.name }
-    val spotifyTracks = playlist.tracks.items.map { SpotifyTrack(it.track.name, it.track.artists.map { it.name }.toString()) }
+    val spotifyTracks = api.getPlaylist(playlistId)
 
-
-    val localSongRepository = LocalSongRepository()
-    val library = localSongRepository.getSongsAsMap(properties["library_folder"] as String)
-    val libraryList = localSongRepository.convertMapToList(library)
-    val libraryFileNames = libraryList.map { it.file.toString() }
+    val localSongRepository = LocalSongRepository(properties["library_folder"] as String)
+    val library = localSongRepository.library
+    val libraryList = localSongRepository.libraryList
+    val libraryFileNames = localSongRepository.libraryFileNames
     println(library)
     println(library.size)
 
@@ -48,26 +34,26 @@ fun main(args: Array<String>) {
     val out = File("output.m3u").printWriter()
     var matches = 0
     spotifyTracks.forEach forEach@ { spotifyTrack ->
-        val songs = library[spotifyTrack.title]
+        val matchingTracks = library[spotifyTrack.title]
 
-        songs?.let {songs ->
+        matchingTracks?.let { matchingTracks ->
             //We have one or more songs that match
 
-            if (songs.size == 1) {
+            if (matchingTracks.size == 1) {
                 //We only have one song that matches. Write it.
-                out.println(songs.first().file)
+                out.println(matchingTracks.first().file)
             } else {
                 //We have multiple
                 //Ask user for which one
                 println("Multiple tracks found for ${spotifyTrack.artist} - ${spotifyTrack.title}")
-                songs.forEachIndexed { index, foundTrack ->
+                matchingTracks.forEachIndexed { index, foundTrack ->
                     println("($index) ${foundTrack.file}")
                 }
 
                 println("Search results for ${spotifyTrack.artist} - ${spotifyTrack.title}: ")
                 val searchList = localSongRepository.searchList(spotifyTrack.title, 10, libraryFileNames)
                 searchList.forEachIndexed { index, item ->
-                    println("(${index + songs.size}) $item")
+                    println("(${index + matchingTracks.size}) $item")
                 }
 
                 var libraryTrack: Song? = null
@@ -76,10 +62,9 @@ fun main(args: Array<String>) {
                     val entry = readLine()
                     if (entry.isNullOrBlank()) return@forEach
 
-                        //Int entry
-                        entry.toIntOrNull()?.let { int ->
-                            libraryTrack = songs.getOrNull(int)
-                                ?: searchList.getOrNull(int + songs.size)?.let { //Int entry that corresponds to search results
+                        entry.toIntOrNull()?.let { int -> //Int entry
+                            libraryTrack = matchingTracks.getOrNull(int)
+                                ?: searchList.getOrNull(int + matchingTracks.size)?.let { //Int entry that corresponds to search results
                                     localSongRepository.getSingle(it)
                                 }
                         } ?: localSongRepository.getSingle(entry)?.let { //Valid String entry
@@ -91,7 +76,7 @@ fun main(args: Array<String>) {
                 out.println(libraryTrack!!.file)
                 matches++
             }
-        } ?: run {
+        } ?: run { //No matching tracks found, just do a search
 
             var song: Song? = null
 

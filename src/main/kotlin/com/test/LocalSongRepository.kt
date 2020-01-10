@@ -6,15 +6,27 @@ import org.jaudiotagger.tag.FieldKey
 import java.io.File
 import java.lang.Exception
 
-class LocalSongRepository {
+class LocalSongRepository(libraryPath: String) {
 
     private val filterWords = listOf("feat",
         "remix",
         "mix",
         "edit")
 
+
+    val library: Map<String, List<Song>> by lazy {
+        getSongsAsMap(libraryPath)
+    }
+    val libraryList: List<Song> by lazy {
+        library.flatMap { it.value }
+    }
+    val libraryFileNames: List<String> by lazy {
+        libraryList.map { it.file.toString() }
+    }
+
+
     //Returns map of song names to all the songs with that title
-    fun getSongsAsMap(path: String): Map<String, List<Song>> {
+    private fun getSongsAsMap(path: String): Map<String, List<Song>> {
         val songs = getAllSongs(path)
 
         val map = HashMap<String, MutableList<Song>>()
@@ -27,8 +39,13 @@ class LocalSongRepository {
         return map
     }
 
-    fun convertMapToList(library: Map<String, List<Song>>): List<Song> {
-        return library.flatMap { it.value }
+    fun getSingle(path: String): Song? {
+        return tryOrNull {
+            val file = File(path)
+            val title = AudioFileIO.read(file).tag.getFirst(FieldKey.TITLE)
+            val artist = AudioFileIO.read(file).tag.getFirst(FieldKey.ARTIST)
+            Song(file, title, artist)
+        }
     }
 
     fun searchList(query: String, size: Int, list: List<String>): List<String> {
@@ -62,15 +79,6 @@ class LocalSongRepository {
             }
         }
         return songs
-    }
-
-    fun getSingle(path: String): Song? {
-        return tryOrNull {
-            val file = File(path)
-            val title = AudioFileIO.read(file).tag.getFirst(FieldKey.TITLE)
-            val artist = AudioFileIO.read(file).tag.getFirst(FieldKey.ARTIST)
-            Song(file, title, artist)
-        }
     }
 
     private fun getAllFiles(path: String): List<File> {
