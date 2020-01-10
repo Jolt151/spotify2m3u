@@ -14,6 +14,7 @@ import okhttp3.CertificatePinner.pin
 import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
+import kotlin.properties.Delegates
 
 
 fun main(args: Array<String>) {
@@ -40,8 +41,9 @@ fun main(args: Array<String>) {
 
     val playlist = api.getPlaylist(playlistId).build()
         .execute()
-    val tracks = playlist.tracks.items
-    val trackNames = tracks.map { it.track.name }
+    //val tracks = playlist.tracks.items
+    //val trackNames = tracks.map { it.track.name }
+    val spotifyTracks = playlist.tracks.items.map { SpotifyTrack(it.track.name, it.track.artists.map { it.name }.toString()) }
 
 
     val localSongRepository = LocalSongRepository()
@@ -50,29 +52,59 @@ fun main(args: Array<String>) {
     println(library.size)
 
 
-    val out =File("output.m3u").printWriter()
+    val out = File("output.m3u").printWriter()
     var matches = 0
-    trackNames.forEach forEach@ {trackName ->
-        if (library.containsKey(trackName)) {
-            out.println(library[trackName]!!.file)
-            matches++
-        } else {
-            println("missing $trackName")
-            println("Add path to track, or press enter to skip")
-            println("Path: ")
-            val path = readLine()
-            if (path != null && path.isNotBlank()) {
-                var song = localSongRepository.getSingle(path)
-                while (song == null) {
-                    println("not found, enter path to try again or press enter to skip")
-                    println("Path: ")
-                    val path = readLine()
-                    if (path == null || path.isBlank()) return@forEach
-                    song = localSongRepository.getSingle(path)
+    spotifyTracks.forEach forEach@ { spotifyTrack ->
+        val songs = library[spotifyTrack.title]
+
+        songs?.let {songs ->
+            //We have one or more songs that match
+
+            if (songs.size == 1) {
+                //We only have one song that matches. Write it.
+                out.println(songs.first().file)
+            } else {
+                //We have multiple
+                //Ask user for which one
+
+                println("Multiple tracks found for ${spotifyTrack.artist} - ${spotifyTrack.title}")
+                songs.forEachIndexed { index, foundTrack ->
+                    println("($index) ${foundTrack.file}")
                 }
-                out.println(song.file)
+
+                var libraryTrack: Song? = null
+                while (libraryTrack == null) {
+                    println("Select the correct one, enter a path to a different one, or press enter to skip ")
+                    val entry = readLine()
+                    if (entry.isNullOrBlank()) return@forEach
+
+                        entry.toIntOrNull()?.let {
+                            libraryTrack = songs.getOrNull(it)
+                        } ?: localSongRepository.getSingle(entry)?.let {
+                            libraryTrack = it
+                        } ?: run {
+                            println("Not found, try again")
+                        }
+                }
+                out.println(libraryTrack!!.file)
                 matches++
             }
+        } ?: run {
+
+            var song: Song? = null
+            while (song == null) {
+                println("missing ${spotifyTrack.artist} - ${spotifyTrack.title}")
+                println("Add path to track, or press enter to skip")
+                println("Path: ")
+                val path = readLine()
+                if (path.isNullOrBlank()) return@forEach
+
+                song = localSongRepository.getSingle(path)
+            }
+
+            out.println(song.file)
+            matches++
+
         }
     }
     out.flush()

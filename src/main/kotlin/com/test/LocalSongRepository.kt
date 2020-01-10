@@ -8,9 +8,17 @@ import java.lang.Exception
 
 class LocalSongRepository {
 
-    fun getSongsAsMap(path: String): Map<String, Song> {
+    //Returns map of song names to all the songs with that title
+    fun getSongsAsMap(path: String): Map<String, List<Song>> {
         val songs = getAllSongs(path)
-        val map = songs.associateBy({ it.title }, { it })
+
+        val map = HashMap<String, MutableList<Song>>()
+        for (song in songs) {
+            val list: MutableList<Song> = map.getOrDefault(song.title, mutableListOf())
+            list.add(song)
+            map[song.title] = list
+        }
+
         return map
     }
 
