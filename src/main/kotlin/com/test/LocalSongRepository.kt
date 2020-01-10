@@ -1,12 +1,17 @@
 package com.test
 
-import org.jaudiotagger.audio.AudioFile
+import me.xdrop.fuzzywuzzy.FuzzySearch
 import org.jaudiotagger.audio.AudioFileIO
 import org.jaudiotagger.tag.FieldKey
 import java.io.File
 import java.lang.Exception
 
 class LocalSongRepository {
+
+    private val filterWords = listOf("feat",
+        "remix",
+        "mix",
+        "edit")
 
     //Returns map of song names to all the songs with that title
     fun getSongsAsMap(path: String): Map<String, List<Song>> {
@@ -22,28 +27,49 @@ class LocalSongRepository {
         return map
     }
 
+    fun convertMapToList(library: Map<String, List<Song>>): List<Song> {
+        return library.flatMap { it.value }
+    }
+
+    fun searchList(query: String, size: Int, list: List<String>): List<String> {
+        //filter out common words
+        val newQuery = formatQuery(query)
+
+        //Use take because this returns the entire list for some reason even though we pass the size
+        return FuzzySearch.extractSorted(newQuery, list, size).take(size).map { it.string }
+    }
+
+    /**
+     * Removes unwanted elements from the search query
+     */
+    private fun formatQuery(query: String): String {
+
+        var mutableQuery = query
+        filterWords.forEach { word ->
+            mutableQuery = mutableQuery.replace(word, " ", ignoreCase = true)
+        }
+        mutableQuery = mutableQuery.filter { it.isLetterOrDigit() }
+        return mutableQuery
+    }
+
     private fun getAllSongs(path: String): List<Song> {
         val files = getAllFiles(path)
         val songs: List<Song> = files.mapNotNull {file ->
-            try {
+            tryOrNull {
                 val title = AudioFileIO.read(file).tag.getFirst(FieldKey.TITLE)
                 val artist = AudioFileIO.read(file).tag.getFirst(FieldKey.ARTIST)
                 Song(file, title, artist)
-            } catch (e: Exception) {
-                null
             }
         }
         return songs
     }
 
     fun getSingle(path: String): Song? {
-        try {
+        return tryOrNull {
             val file = File(path)
             val title = AudioFileIO.read(file).tag.getFirst(FieldKey.TITLE)
             val artist = AudioFileIO.read(file).tag.getFirst(FieldKey.ARTIST)
-            return Song(file, title, artist)
-        } catch (e: Exception) {
-            return null
+            Song(file, title, artist)
         }
     }
 
@@ -53,12 +79,6 @@ class LocalSongRepository {
         val file = File(path)
         if (file.isFile) {
             list.add(file)
-/*            try {
-                val trackName = file.toTrackTitle()
-                list.add(trackName)
-            } catch (e: Exception) {
-                println("no title: ${file.absolutePath}" )
-            }*/
         } else if (file.isDirectory) {
 
             val nestedDirectoryFiles = mutableListOf<File>()

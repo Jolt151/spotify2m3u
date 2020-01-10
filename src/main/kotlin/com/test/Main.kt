@@ -1,20 +1,11 @@
 package com.test
 
-import com.github.kittinunf.fuel.core.interceptors.redirectResponseInterceptor
 import com.wrapper.spotify.SpotifyApi
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import org.jaudiotagger.audio.AudioFileIO
-import org.jaudiotagger.tag.FieldKey
-import retrofit2.Retrofit
-import retrofit2.converter.moshi.MoshiConverterFactory
 import java.io.File
 import java.io.FileInputStream
-import okhttp3.CertificatePinner.pin
 import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
-import kotlin.properties.Delegates
 
 
 fun main(args: Array<String>) {
@@ -48,6 +39,8 @@ fun main(args: Array<String>) {
 
     val localSongRepository = LocalSongRepository()
     val library = localSongRepository.getSongsAsMap(properties["library_folder"] as String)
+    val libraryList = localSongRepository.convertMapToList(library)
+    val libraryFileNames = libraryList.map { it.file.toString() }
     println(library)
     println(library.size)
 
@@ -66,10 +59,15 @@ fun main(args: Array<String>) {
             } else {
                 //We have multiple
                 //Ask user for which one
-
                 println("Multiple tracks found for ${spotifyTrack.artist} - ${spotifyTrack.title}")
                 songs.forEachIndexed { index, foundTrack ->
                     println("($index) ${foundTrack.file}")
+                }
+
+                println("Search results for ${spotifyTrack.artist} - ${spotifyTrack.title}: ")
+                val searchList = localSongRepository.searchList(spotifyTrack.title, 10, libraryFileNames)
+                searchList.forEachIndexed { index, item ->
+                    println("(${index + songs.size}) $item")
                 }
 
                 var libraryTrack: Song? = null
@@ -78,11 +76,15 @@ fun main(args: Array<String>) {
                     val entry = readLine()
                     if (entry.isNullOrBlank()) return@forEach
 
-                        entry.toIntOrNull()?.let {
-                            libraryTrack = songs.getOrNull(it)
-                        } ?: localSongRepository.getSingle(entry)?.let {
+                        //Int entry
+                        entry.toIntOrNull()?.let { int ->
+                            libraryTrack = songs.getOrNull(int)
+                                ?: searchList.getOrNull(int + songs.size)?.let { //Int entry that corresponds to search results
+                                    localSongRepository.getSingle(it)
+                                }
+                        } ?: localSongRepository.getSingle(entry)?.let { //Valid String entry
                             libraryTrack = it
-                        } ?: run {
+                        } ?: run { //Anything else
                             println("Not found, try again")
                         }
                 }
@@ -92,17 +94,29 @@ fun main(args: Array<String>) {
         } ?: run {
 
             var song: Song? = null
-            while (song == null) {
-                println("missing ${spotifyTrack.artist} - ${spotifyTrack.title}")
-                println("Add path to track, or press enter to skip")
-                println("Path: ")
-                val path = readLine()
-                if (path.isNullOrBlank()) return@forEach
 
-                song = localSongRepository.getSingle(path)
+            println("Missing ${spotifyTrack.artist} - ${spotifyTrack.title}")
+            val searchList = localSongRepository.searchList(spotifyTrack.title, 15, libraryFileNames)
+            searchList.forEachIndexed { index, item ->
+                println("($index) $item")
             }
 
-            out.println(song.file)
+            while (song == null) {
+                println("Select the correct one, enter a path to a different one, or press enter to skip ")
+                println("Selection: ")
+
+                val entry = readLine()
+                if (entry.isNullOrBlank()) return@forEach
+                entry.toIntOrNull()?.let {
+                    song = localSongRepository.getSingle(searchList[it])
+                } ?: localSongRepository.getSingle(entry)?.let {
+                    song = it
+                } ?: run {
+                    println("Not found, try again")
+                }
+            }
+
+            out.println(song!!.file)
             matches++
 
         }
