@@ -48,12 +48,22 @@ class LocalSongRepository(libraryPath: String) {
         }
     }
 
-    fun searchList(query: String, size: Int, list: List<String>): List<String> {
+    fun searchLibrary(query: String, size: Int): List<String> {
         //filter out common words
         val newQuery = formatQuery(query)
 
         //Use take because this returns the entire list for some reason even though we pass the size
-        return FuzzySearch.extractSorted(newQuery, list, size).take(size).map { it.string }
+        return FuzzySearch.extractSorted(newQuery, libraryFileNames, size).take(size).map { it.string }
+    }
+
+    /**
+     * Get the list of the playlist entries
+     * Takes a list of indices to songs
+     */
+    fun orderSongsAsFilepaths(songs: List<Pair<Int, Song>>): List<String> {
+        val orderedSongs: List<Song> = songs.sortedBy { it.first }.map { it.second }
+        val filepaths = orderedSongs.map { it.file.toString() }
+        return filepaths
     }
 
     /**
