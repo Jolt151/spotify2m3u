@@ -26,9 +26,5 @@ public open class Application {
         return SpotifyApiWrapper()
     }
 
-/*    @Bean
-    open fun trackMatcher(): TrackMatcher {
-        return TrackMatcher()
-    }*/
 
 }

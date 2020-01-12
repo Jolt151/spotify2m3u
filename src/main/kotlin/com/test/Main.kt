@@ -1,5 +1,6 @@
 package com.test
 
+import com.google.gson.Gson
 import java.io.File
 import java.io.FileInputStream
 import java.util.*
@@ -121,5 +122,9 @@ fun main(args: Array<String>) { /*
     out.flush()
     println(filepaths.size)
  */
+
+
+    val gson = Gson()
+    val result: MatchJob = gson.fromJson("fdsa", MatchJob::class.java)
 }
 

@@ -1,0 +1,146 @@
+<html lang="en">
+<head>
+    <title>spotify2m3u</title>
+    <style>
+        table, th, td, thead {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+    <script lang="javascript">
+
+        var response;
+
+        function startMatching() {
+            console.log("starting");
+            var xhr = new XMLHttpRequest();
+            var url = new URL("http://localhost:8080/api/startMatching?playlistId=37i9dQZF1EtlveGNtN04LV");
+            xhr.open("POST", url, true);
+            // url.searchParams.append("playlistId", document.getElementById("playlistId").value);
+            url.searchParams.set("playlistId", "37i9dQZF1EtlveGNtN04LV");
+
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            console.log(xhr.url);
+            xhr.send();
+            xhr.onload = function (ev) {
+                response = JSON.parse(this.responseText)
+                console.log(response)
+
+                const updateSelectionButton = document.createElement("button")
+                updateSelectionButton.innerText = "update selection"
+                updateSelectionButton.onclick = function() {
+                    updateSelection();
+                };
+                document.getElementById("button").parentNode.insertBefore(updateSelectionButton, document.getElementById("button").nextSibling)
+
+                updateUI()
+
+            }
+        }
+
+        function updateSelection() {
+            console.log("updating")
+
+            var body = JSON.stringify(response);
+            body = JSON.parse(body)
+            body.fixedPendingTracks = []
+            const table = document.getElementById("table")
+            console.log(table)
+            console.log(table.rows.length)
+            for (var i = 1; i < table.rows.length; i++) {
+                const td = table.rows[i].cells[1];
+                if (td.childElementCount > 0) {
+                    //console.log(td)
+                    const select = td.children[0]
+                    //console.log(select.value)
+
+                    if (select.value != "Select one...") {
+                        console.log("pushing...");
+                        console.log(select.value);
+                        body.fixedPendingTracks.push(
+                            {
+                                "index" : select.id,
+                                "trackPath" : select.value
+                            }
+                        )
+                    }
+                }
+            }
+
+            console.log(JSON.stringify(body))
+            console.log(body)
+            console.log(body.fixedPendingTracks)
+
+            var xhr = new XMLHttpRequest();
+            var url = new URL("http://localhost:8080/api/addMatches");
+            xhr.open("POST", url, true);
+
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.send(JSON.stringify(body));
+            xhr.onload = function (ev) {
+                response = JSON.parse(this.responseText)
+                console.log(response)
+                updateUI()
+            }
+
+        }
+
+        function updateUI() {
+            const table = document.createElement("table")
+            table.id = "table"
+            var headerRow = table.insertRow()
+
+            var thead = document.createElement("th")
+            thead.innerText = "Spotify List"
+            headerRow.appendChild(thead)
+
+            var localth = document.createElement("th")
+            localth.innerText = "Local List"
+            headerRow.appendChild(localth)
+
+            response.spotifyTracks.forEach(spotifyTrack => {
+                var row = table.insertRow()
+                var cell1 = row.insertCell()
+                cell1.innerText = spotifyTrack.title
+
+            })
+
+            response.foundTracks.forEach(foundTrack => {
+                const cell = table.rows[foundTrack.index + 1].insertCell()
+                cell.innerText = foundTrack.song.file.path
+            })
+
+            response.pendingTracks.forEach(pendingTrack => {
+                const cell = table.rows[pendingTrack.index + 1].insertCell()
+                var select = document.createElement('select')
+                select.id = pendingTrack.index
+                const option = document.createElement('option')
+                option.text = "Select one..."
+                select.appendChild(option)
+
+                pendingTrack.searchResults.forEach(searchResult => {
+                    const option = document.createElement('option')
+                    option.value = searchResult
+                    option.text = searchResult
+                    select.appendChild(option)
+                })
+                cell.appendChild(select)
+
+                const oldTable = document.getElementById("table")
+                oldTable.parentNode.replaceChild(table, oldTable)
+            })
+        }
+    </script>
+
+    <label for="playlistId"></label><input id="playlistId" type="text" placeholder="playlist id" value="37i9dQZF1EtlveGNtN04LV">
+    <button id="button" type="button" onclick="startMatching();">match</button>
+
+    <table id="table">
+        <tr>
+            <th>Spotify List</th>
+            <th>Local List</th>
+        </tr>
+    </table>
+</body>
+</html>

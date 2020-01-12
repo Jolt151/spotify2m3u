@@ -12,6 +12,11 @@ open class TrackMatcher(val localSongRepository: LocalSongRepository) {
     val foundTracks = mutableListOf<FoundTrack>()
     val pendingTracks = mutableListOf<PendingTrack>()
 
+    constructor(localSongRepository: LocalSongRepository, foundTracks: List<FoundTrack>, pendingTracks: List<PendingTrack>): this(localSongRepository) {
+        this.foundTracks.addAll(foundTracks)
+        this.pendingTracks.addAll(pendingTracks)
+    }
+
     fun match(spotifyTracks: List<SpotifyTrack>) {
         spotifyTracks.forEachIndexed forEach@ { index, spotifyTrack ->
 
@@ -34,6 +39,16 @@ open class TrackMatcher(val localSongRepository: LocalSongRepository) {
 
     fun addMatch(index: Int, track: Song) {
         foundTracks.add(FoundTrack(track, index))
+    }
+
+    fun addMatch(index: Int, trackPath: String): Boolean {
+        localSongRepository.getSingle(trackPath)?.let {
+            foundTracks.add(FoundTrack(it, index))
+            pendingTracks.removeIf { it.index == index }
+            return true
+        } ?: run {
+            return false
+        }
     }
 
     fun searchForMatches(spotifyTrack: SpotifyTrack): List<String> {

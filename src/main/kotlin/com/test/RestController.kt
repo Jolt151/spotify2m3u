@@ -1,8 +1,7 @@
 package com.test
 
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.*
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
@@ -17,7 +16,7 @@ class RestController {
         return spotifyApi.getPlaylist(playlistId)
     }
 
-    @RequestMapping("/api/startMatching")
+    @RequestMapping("/api/startMatching", method = [RequestMethod.POST])
     fun startMatching(@RequestParam playlistId: String): MatchJob {
         val trackMatcher = TrackMatcher(localSongRepository)
         val spotifyTracks = spotifyApi.getPlaylist(playlistId)
@@ -28,8 +27,29 @@ class RestController {
 
     }
 
+    @RequestMapping("/api/addMatches", method = [RequestMethod.POST])
+    fun addMatches(@RequestBody matchJob: ReceivingMatchJob): MatchJob {
+        val trackMatcher = TrackMatcher(localSongRepository, matchJob.foundTracks, matchJob.pendingTracks)
+
+        matchJob.fixedPendingTracks?.forEach {fixedTrack ->
+            trackMatcher.addMatch(fixedTrack.index, fixedTrack.trackPath)
+        }
+
+        return MatchJob(matchJob.spotifyTracks, trackMatcher.foundTracks, trackMatcher.pendingTracks)
+    }
+
+    @RequestMapping("/api/finishMatching")
+    fun finishMatching(@RequestBody matchJob: MatchJob) {
+        TODO("Create the m3u from the matchJob.foundTracks")
+    }
+
 }
 
 data class MatchJob(val spotifyTracks: List<SpotifyTrack>, val foundTracks: List<FoundTrack>,
                     val pendingTracks: List<PendingTrack>)
+
+data class ReceivingMatchJob(val spotifyTracks: List<SpotifyTrack>, val foundTracks: List<FoundTrack>,
+                             val pendingTracks: List<PendingTrack>, val fixedPendingTracks: List<FixedPendingTrack>?)
+
+data class FixedPendingTrack(val index: Int, val trackPath: String)
 
