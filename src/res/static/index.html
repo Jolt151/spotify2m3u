@@ -15,10 +15,8 @@
         function startMatching() {
             console.log("starting");
             var xhr = new XMLHttpRequest();
-            var url = new URL("http://localhost:8080/api/startMatching?playlistId=37i9dQZF1EtlveGNtN04LV");
+            var url = new URL("http://localhost:8080/api/startMatching?playlistId=" + document.getElementById("playlistId").value);
             xhr.open("POST", url, true);
-            // url.searchParams.append("playlistId", document.getElementById("playlistId").value);
-            url.searchParams.set("playlistId", "37i9dQZF1EtlveGNtN04LV");
 
             xhr.setRequestHeader('Content-Type', 'application/json');
             console.log(xhr.url);
