@@ -38,6 +38,11 @@ class RestController {
         return MatchJob(matchJob.spotifyTracks, trackMatcher.foundTracks, trackMatcher.pendingTracks)
     }
 
+    @RequestMapping("/api/getMoreSearchResults")
+    fun getMoreSearchResults(@RequestParam title: String, @RequestParam size: Int): List<String> {
+        return localSongRepository.searchLibrary(title, size)
+    }
+
     @RequestMapping("/api/finishMatching")
     fun finishMatching(@RequestBody matchJob: MatchJob) {
         TODO("Create the m3u from the matchJob.foundTracks")

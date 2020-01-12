@@ -86,6 +86,22 @@
 
         }
 
+        function loadMoreResults(title, size) {
+            return new Promise(function (resolve, reject) {
+                var xhr = new XMLHttpRequest();
+                var url = new URL("http://localhost:8080/api/getMoreSearchResults?title=" + title +"&size=" + size);
+                xhr.open("GET", url, true);
+
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.send();
+                xhr.onload = function (ev) {
+                    response = JSON.parse(this.responseText)
+                    console.log(response)
+                    resolve(response)
+                }
+            })
+        }
+
         function updateUI() {
             const table = document.createElement("table")
             table.id = "table"
@@ -137,6 +153,27 @@
                 })
                 cell.appendChild(input)
                 cell.appendChild(datalist)
+
+                var button = document.createElement("button")
+                button.type = button
+                button.innerText = "Load more results"
+                button.onclick = async function() {
+                    loadMoreResults(pendingTrack.spotifyTrack.title, 20).then(results => {
+                        var newDataList = document.createElement("datalist")
+                        newDataList.id = pendingTrack.index + "options"
+
+                        results.forEach(result => {
+                            const option = document.createElement('option')
+                            option.value = result
+                            option.text = result
+                            newDataList.appendChild(option)
+                        })
+
+                        cell.removeChild(datalist)
+                        cell.appendChild(newDataList)
+                    })
+                }
+                cell.appendChild(button)
 
                 const oldTable = document.getElementById("table")
                 oldTable.parentNode.replaceChild(table, oldTable)
