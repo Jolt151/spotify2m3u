@@ -52,16 +52,16 @@
                 const td = table.rows[i].cells[1];
                 if (td.childElementCount > 0) {
                     //console.log(td)
-                    const select = td.children[0]
+                    const input = td.children[0]
                     //console.log(select.value)
 
-                    if (select.value != "Select one...") {
+                    if (input.value != "") {
                         console.log("pushing...");
-                        console.log(select.value);
+                        console.log(input.value);
                         body.fixedPendingTracks.push(
                             {
-                                "index" : select.id,
-                                "trackPath" : select.value
+                                "index" : input.id,
+                                "trackPath" : input.value
                             }
                         )
                     }
@@ -113,19 +113,30 @@
 
             response.pendingTracks.forEach(pendingTrack => {
                 const cell = table.rows[pendingTrack.index + 1].insertCell()
-                var select = document.createElement('select')
+
+                var input = document.createElement("input");
+                input.id = pendingTrack.index
+                input.type = "text"
+                input.hint = "Select one..."
+                input.setAttribute("list", pendingTrack.index + "options")
+
+                var datalist = document.createElement("datalist")
+                datalist.id = pendingTrack.index + "options"
+
+/*                var select = document.createElement('select')
                 select.id = pendingTrack.index
                 const option = document.createElement('option')
                 option.text = "Select one..."
-                select.appendChild(option)
+                select.appendChild(option)*/
 
                 pendingTrack.searchResults.forEach(searchResult => {
                     const option = document.createElement('option')
                     option.value = searchResult
                     option.text = searchResult
-                    select.appendChild(option)
+                    datalist.appendChild(option)
                 })
-                cell.appendChild(select)
+                cell.appendChild(input)
+                cell.appendChild(datalist)
 
                 const oldTable = document.getElementById("table")
                 oldTable.parentNode.replaceChild(table, oldTable)
