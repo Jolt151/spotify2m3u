@@ -1,6 +1,5 @@
 package com.test
 
-import com.test.SpotifyApiWrapper.Companion.api
 import java.io.File
 import java.io.FileInputStream
 import java.util.*
@@ -8,7 +7,7 @@ import java.util.logging.Level
 import java.util.logging.Logger
 
 
-fun main(args: Array<String>) {
+fun main(args: Array<String>) { /*
     //Disable loggers
     val pin = arrayOf<Logger>(Logger.getLogger("org.jaudiotagger"))
     for (l in pin)
@@ -21,7 +20,9 @@ fun main(args: Array<String>) {
     val playlistId: String = properties["spotify_playlist"] as String
     print(playlistId)
 
-    val spotifyTracks = api.getPlaylist(playlistId)
+    val spotifyApi = SpotifyApiWrapper()
+
+    val spotifyTracks = spotifyApi.getPlaylist(playlistId)
 
     val localSongRepository = LocalSongRepository(properties["library_folder"] as String)
     val library = localSongRepository.library
@@ -33,7 +34,7 @@ fun main(args: Array<String>) {
 
     val out = File("output.m3u").printWriter()
 
-    val trackMatcher = TrackMatcher(library, localSongRepository)
+    val trackMatcher = TrackMatcher()
     trackMatcher.match(spotifyTracks)
 
 
@@ -119,6 +120,6 @@ fun main(args: Array<String>) {
     }
     out.flush()
     println(filepaths.size)
-
+ */
 }
 

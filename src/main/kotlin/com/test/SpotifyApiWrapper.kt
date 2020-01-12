@@ -3,13 +3,7 @@ package com.test
 import com.wrapper.spotify.SpotifyApi
 import com.wrapper.spotify.model_objects.specification.Playlist
 
-class SpotifyApiWrapper {
-
-    companion object {
-        val api by lazy {
-            SpotifyApiWrapper()
-        }
-    }
+class SpotifyApiWrapper() {
 
     private val api: SpotifyApi = SpotifyApi.Builder()
         .setClientId("deecbb22fbb641fb853c69721338e3a2")

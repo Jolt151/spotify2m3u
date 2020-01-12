@@ -3,6 +3,7 @@ package com.test
 import me.xdrop.fuzzywuzzy.FuzzySearch
 import org.jaudiotagger.audio.AudioFileIO
 import org.jaudiotagger.tag.FieldKey
+import org.springframework.stereotype.Repository
 import java.io.File
 import java.lang.Exception
 
@@ -14,15 +15,20 @@ class LocalSongRepository(libraryPath: String) {
         "edit")
 
 
-    val library: Map<String, List<Song>> by lazy {
+/*    val library: Map<String, List<Song>> by lazy {
         getSongsAsMap(libraryPath)
-    }
-    val libraryList: List<Song> by lazy {
+    }*/
+
+    val library: Map<String, List<Song>> = getSongsAsMap(libraryPath)
+    val libraryList: List<Song> = library.flatMap { it.value }
+    val libraryFileNames: List<String> = libraryList.map { it.file.toString() }
+
+/*    val libraryList: List<Song> by lazy {
         library.flatMap { it.value }
     }
     val libraryFileNames: List<String> by lazy {
         libraryList.map { it.file.toString() }
-    }
+    }*/
 
 
     //Returns map of song names to all the songs with that title

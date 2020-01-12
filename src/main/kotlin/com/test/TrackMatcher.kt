@@ -1,41 +1,39 @@
 package com.test
 
-class TrackMatcher(val library: Map<String, List<Song>>, val localSongRepository: LocalSongRepository) {
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.context.annotation.Bean
+import org.springframework.stereotype.Component
+
+open class TrackMatcher(val localSongRepository: LocalSongRepository) {
+
+    val library: Map<String, List<Song>> = localSongRepository.library
 
     //Pairs of playlist position to song
-    private val foundTracks = mutableListOf<Pair<Int, Song>>()
-    private val pendingTracks = mutableListOf<Pair<Int, SpotifyTrack>>()
+    val foundTracks = mutableListOf<FoundTrack>()
+    val pendingTracks = mutableListOf<PendingTrack>()
 
     fun match(spotifyTracks: List<SpotifyTrack>) {
         spotifyTracks.forEachIndexed forEach@ { index, spotifyTrack ->
 
             val matchingTracks = library[spotifyTrack.title]
-            matchingTracks?.let {
-                if (it.size == 1)
-                    foundTracks.add(Pair(index, it.first()))
+            matchingTracks?.let {matches ->
+                if (matches.size == 1)
+                    foundTracks.add(FoundTrack(matches.first(), index))
                 else {
                     //Multiple tracks
-                    pendingTracks.add(Pair(index, spotifyTrack))
+                    val searchResults = searchForMatches(spotifyTrack)
+                    pendingTracks.add(PendingTrack(spotifyTrack, index, matches, searchResults))
                 }
             } ?: run {
                 //no matching tracks
-                pendingTracks.add(Pair(index, spotifyTrack))
+                val searchResults = searchForMatches(spotifyTrack)
+                pendingTracks.add(PendingTrack(spotifyTrack, index, null, searchResults))
             }
         }
     }
 
-    @JvmName("getPending")
-    fun getPendingTracks(): List<Pair<Int, SpotifyTrack>> {
-        return pendingTracks
-    }
-
-
-    fun getFoundTracks(): List<Pair<Int, Song>> {
-        return foundTracks
-    }
-
     fun addMatch(index: Int, track: Song) {
-        foundTracks.add(Pair(index, track))
+        foundTracks.add(FoundTrack(track, index))
     }
 
     fun searchForMatches(spotifyTrack: SpotifyTrack): List<String> {
