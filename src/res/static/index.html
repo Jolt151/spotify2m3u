@@ -26,11 +26,46 @@
                 console.log(response)
 
                 const updateSelectionButton = document.createElement("button")
+                updateSelectionButton.id = "update"
                 updateSelectionButton.innerText = "update selection"
                 updateSelectionButton.onclick = function() {
                     updateSelection();
                 };
                 document.getElementById("button").parentNode.insertBefore(updateSelectionButton, document.getElementById("button").nextSibling)
+
+                const finishMatchingButton = document.createElement("button")
+                finishMatchingButton.innerText = "Download m3u"
+                finishMatchingButton.onclick = function() {
+                    console.log("downloading...")
+
+                    var xhr = new XMLHttpRequest();
+                    var url = new URL("http://localhost:8080/api/finishMatching");
+                    xhr.open("POST", url, true);
+                    xhr.setRequestHeader('Content-Type', 'application/json');
+                    xhr.setRequestHeader("Accept", "text/plain")
+                    //xhr.responseType = 'blob'
+                    xhr.send(JSON.stringify(response));
+                    xhr.onload = function (ev) {
+                        console.log(this.responseText)
+                        a = document.createElement('a');
+                        a.href = window.webkitURL.createObjectURL(new Blob([this.responseText], {type: "text/plain"}));
+                        // Give filename you wish to download
+                        a.download = "playlist.m3u";
+                        a.style.display = 'none';
+                        document.body.appendChild(a);
+                        a.click();
+                    }
+
+                    //window.href = "http://localhost:8080/api/finishMatching"
+
+                    //xhr.onload
+
+
+
+                    //downloadURI("http://localhost:8080/api/finishMatching", "playlist.m3u")
+                };
+
+                updateSelectionButton.parentNode.insertBefore(finishMatchingButton, updateSelectionButton.nextSibling)
 
                 updateUI()
 

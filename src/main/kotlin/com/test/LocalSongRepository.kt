@@ -66,8 +66,8 @@ class LocalSongRepository(libraryPath: String) {
      * Get the list of the playlist entries
      * Takes a list of indices to songs
      */
-    fun orderSongsAsFilepaths(songs: List<Pair<Int, Song>>): List<String> {
-        val orderedSongs: List<Song> = songs.sortedBy { it.first }.map { it.second }
+    fun orderSongsAsFilepaths(songs: List<FoundTrack>): List<String> {
+        val orderedSongs: List<Song> = songs.sortedBy { it.index }.map { it.song }
         val filepaths = orderedSongs.map { it.file.toString() }
         return filepaths
     }

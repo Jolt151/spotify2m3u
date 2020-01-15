@@ -1,8 +1,17 @@
 package com.test
 
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.core.io.FileSystemResource
+import org.springframework.core.io.InputStreamResource
+import org.springframework.core.io.Resource
+import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.bind.annotation.RestController
+import java.io.File
+import java.io.FileInputStream
+import java.lang.StringBuilder
 
 @RestController
 class RestController {
@@ -43,9 +52,32 @@ class RestController {
         return localSongRepository.searchLibrary(title, size)
     }
 
-    @RequestMapping("/api/finishMatching")
-    fun finishMatching(@RequestBody matchJob: MatchJob) {
-        TODO("Create the m3u from the matchJob.foundTracks")
+    @RequestMapping("/api/finishMatching", produces = ["text/plain"])
+    fun finishMatching(@RequestBody matchJob: MatchJob): ResponseEntity<String> {
+        //val file = File("output.m3u")
+        val file = File.createTempFile("output", "m3u")
+
+        val out = file.printWriter()
+        val filepaths = localSongRepository.orderSongsAsFilepaths(matchJob.foundTracks)
+        val sb = StringBuilder()
+
+        filepaths.forEach {
+            out.println(filepaths)
+            sb.appendln(it)
+        }
+        out.flush()
+
+        println(sb.toString())
+        return ResponseEntity(sb.toString(), HttpStatus.OK)
+
+/*        val inputStreamResource = InputStreamResource(FileInputStream(file))
+         val fileSystemResource = FileSystemResource(file)*/
+/*        return ResponseEntity.ok()
+            .contentLength(file.length())
+            .contentType(MediaType.parseMediaType("application/octet-stream"))
+            .body(fileSystemResource)*/
+
+
     }
 
 }
