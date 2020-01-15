@@ -1,11 +1,12 @@
-package com.test
+package com.test.model
 
+import com.test.model.objects.FoundTrack
+import com.test.model.objects.Song
+import com.test.util.tryOrNull
 import me.xdrop.fuzzywuzzy.FuzzySearch
 import org.jaudiotagger.audio.AudioFileIO
 import org.jaudiotagger.tag.FieldKey
-import org.springframework.stereotype.Repository
 import java.io.File
-import java.lang.Exception
 
 class LocalSongRepository(libraryPath: String) {
 
@@ -87,7 +88,7 @@ class LocalSongRepository(libraryPath: String) {
 
     private fun getAllSongs(path: String): List<Song> {
         val files = getAllFiles(path)
-        val songs: List<Song> = files.mapNotNull {file ->
+        val songs: List<Song> = files.mapNotNull { file ->
             tryOrNull {
                 val title = AudioFileIO.read(file).tag.getFirst(FieldKey.TITLE)
                 val artist = AudioFileIO.read(file).tag.getFirst(FieldKey.ARTIST)

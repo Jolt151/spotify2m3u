@@ -1,8 +1,10 @@
 package com.test
 
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.context.annotation.Bean
-import org.springframework.stereotype.Component
+import com.test.model.LocalSongRepository
+import com.test.model.objects.FoundTrack
+import com.test.model.objects.PendingTrack
+import com.test.model.objects.Song
+import com.test.model.objects.SpotifyTrack
 
 open class TrackMatcher(val localSongRepository: LocalSongRepository) {
 

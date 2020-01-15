@@ -1,7 +1,7 @@
-package com.test
+package com.test.model
 
+import com.test.model.objects.SpotifyTrack
 import com.wrapper.spotify.SpotifyApi
-import com.wrapper.spotify.model_objects.specification.Playlist
 
 class SpotifyApiWrapper() {
 
@@ -16,6 +16,11 @@ class SpotifyApiWrapper() {
     }
 
     fun getPlaylist(id: String): List<SpotifyTrack> {
-        return api.getPlaylist(id).build().execute().tracks.items.map { SpotifyTrack(it.track.name, it.track.artists.map { it.name }.toString()) }
+        return api.getPlaylist(id).build().execute().tracks.items.map {
+            SpotifyTrack(
+                it.track.name,
+                it.track.artists.map { it.name }.toString()
+            )
+        }
     }
 }

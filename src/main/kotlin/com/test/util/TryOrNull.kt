@@ -1,4 +1,4 @@
-package com.test
+package com.test.util
 
 fun <T : Any> tryOrNull(body: () -> T?): T? {
     //the body returns T? so that you can give up the work by returning null
